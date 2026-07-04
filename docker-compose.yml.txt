@@ -1,0 +1,36 @@
+name: solana-verifier
+services:
+  db:
+    image: postgres:18
+    platform: linux/amd64
+    env_file: .env
+    restart: always
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgresql:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432 -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file: .env
+    restart: always
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp:/tmp
+      - /logs:/logs
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgresql:
